@@ -1,0 +1,31 @@
+# electron-builder 打包配置
+# 打包命令: npm run dist   (产物在 dist/ 目录)
+appId: com.meterpanel.app
+productName: 水电表数据面板
+copyright: Copyright © 2026
+
+directories:
+  output: dist
+  buildResources: build
+
+# 打进应用的产物: 编译后的主进程/渲染进程 + 内置样例数据
+files:
+  - out/**
+  - resources/**
+
+win:
+  icon: build/icon.png
+  target:
+    - nsis
+    - portable
+
+# 安装版(带安装向导)
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  artifactName: meter-panel-Setup-${version}.${ext}
+
+# 绿色版(单文件免安装)
+portable:
+  artifactName: meter-panel-${version}-portable.${ext}
