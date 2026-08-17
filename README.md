@@ -133,6 +133,19 @@ npm run dist:portable   # 只要绿色版(单文件免安装)
   $env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"
   npm install
   ```
+- **`npm install` 后 Electron 二进制缺失**(仅 Node 24+ 可能遇到):`node_modules/electron/dist/` 里只有 `LICENSES.chromium.html` 没有 `electron.exe`,原因是 Electron 安装脚本的解压步骤在 Node 24 下静默失败。修复(Windows):
+  ```powershell
+  # 找到缓存里的 zip(约 115MB)
+  $zip = Get-ChildItem "$env:LOCALAPPDATA\electron\Cache\*\.zip" | Select-Object -First 1
+  Remove-Item -Recurse node_modules\electron\dist
+  Expand-Archive $zip.FullName -DestinationPath node_modules\electron\dist -Force
+  Set-Content node_modules\electron\path.txt -NoNewline -Value "electron.exe"
+  ```
+- **打包阶段 NSIS 工具下载慢/失败**:临时设置镜像环境变量后重跑
+  ```powershell
+  $env:ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"
+  npm run dist:portable
+  ```
 - **连不上后端**:先确认本机可访问接口地址(`curl <地址>`);若可达但面板报错,错误提示会给出具体地址和原因,把提示发出来即可。
 - **打包分发**:需要打包成 exe 时再加 electron-builder(目前未配置)。
 
