@@ -37,8 +37,8 @@ export default function SettingsModal({ config, onClose, onSave }: Props) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="设置">
+    <div className="modal-overlay">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="设置">
         <h2>设置</h2>
         <p className="modal-hint">
           面板只使用两个 CSV 接口;「本地内置样例」模式直接展示项目 resources/meter-data 下的数据,不发起任何网络请求。
