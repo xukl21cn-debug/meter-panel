@@ -21,6 +21,8 @@ export default function App() {
   // 网关/总线过滤状态按水/电分别保存(修复: 切换 Tab 时不再串用另一张表的过滤值)
   const [gwFilter, setGwFilter] = useState<Record<'water' | 'electricity', string>>({ water: '', electricity: '' })
   const [busFilter, setBusFilter] = useState<Record<'water' | 'electricity', string>>({ water: '', electricity: '' })
+  // 「只看无值」开关也按水/电分别保存
+  const [noValueOnly, setNoValueOnly] = useState<Record<'water' | 'electricity', boolean>>({ water: false, electricity: false })
 
   useEffect(() => {
     window.api.getConfig().then(setConfig)
@@ -204,8 +206,10 @@ export default function App() {
             rows={activeTab === 'water' ? water.rows : elec.rows}
             gwFilter={gwFilter[activeTab]}
             busFilter={busFilter[activeTab]}
+            noValueOnly={noValueOnly[activeTab]}
             onGwFilterChange={(v) => setGwFilter((p) => ({ ...p, [activeTab]: v }))}
             onBusFilterChange={(v) => setBusFilter((p) => ({ ...p, [activeTab]: v }))}
+            onNoValueOnlyChange={(v) => setNoValueOnly((p) => ({ ...p, [activeTab]: v }))}
             emptyText="暂无数据 · 请在设置里选择数据来源(本地内置样例 / 后端接口)"
           />
         </div>

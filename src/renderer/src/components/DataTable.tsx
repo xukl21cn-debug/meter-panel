@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, GetRowIdParams, GridApi, GridReadyEvent } from 'ag-grid-community'
 import type { TableRow } from '../../../shared/types'
@@ -9,8 +9,11 @@ interface Props {
   gwFilter: string
   /** 按总线过滤的值 */
   busFilter: string
+  /** 只看无值: 仅显示值列为空的表 */
+  noValueOnly: boolean
   onGwFilterChange: (v: string) => void
   onBusFilterChange: (v: string) => void
+  onNoValueOnlyChange: (v: boolean) => void
   emptyText?: string
 }
 
@@ -34,7 +37,16 @@ function unique(arr: string[]): string[] {
   return Array.from(new Set(arr))
 }
 
-export default function DataTable({ rows, gwFilter, busFilter, onGwFilterChange, onBusFilterChange, emptyText = '暂无数据' }: Props) {
+export default function DataTable({
+  rows,
+  gwFilter,
+  busFilter,
+  noValueOnly,
+  onGwFilterChange,
+  onBusFilterChange,
+  onNoValueOnlyChange,
+  emptyText = '暂无数据'
+}: Props) {
   const [api, setApi] = useState<GridApi | null>(null)
   const [search, setSearch] = useState('')
 
@@ -52,15 +64,26 @@ export default function DataTable({ rows, gwFilter, busFilter, onGwFilterChange,
     [rows, busKey]
   )
 
-  // 工具条下拉过滤(与快速过滤叠加生效)
+  // 值列: 每行最后一个非序号列(水表=累计流量, 电表=电量); 无值=该列为空
+  const valueKey = useMemo(() => (headerKeys.length ? headerKeys[headerKeys.length - 1] : null), [headerKeys])
+  const isNoValue = useCallback(
+    (r: TableRow) => {
+      if (!valueKey) return false
+      const v = r[valueKey]
+      return v === '' || v === undefined || v === null
+    },
+    [valueKey]
+  )
+  const noValueCount = useMemo(() => (valueKey ? rows.filter(isNoValue).length : 0), [rows, valueKey, isNoValue])
+
+  // 工具条过滤(网关/总线/只看无值, 与快速过滤叠加生效)
   const filteredRows = useMemo(() => {
-    if (!gwFilter && !busFilter) return rows
-    return rows.filter(
-      (r) =>
-        (!gwFilter || (gwKey != null && String(r[gwKey]) === gwFilter)) &&
-        (!busFilter || (busKey != null && String(r[busKey]) === busFilter))
-    )
-  }, [rows, gwFilter, busFilter, gwKey, busKey])
+    let out = rows
+    if (gwFilter) out = out.filter((r) => gwKey != null && String(r[gwKey]) === gwFilter)
+    if (busFilter) out = out.filter((r) => busKey != null && String(r[busKey]) === busFilter)
+    if (noValueOnly) out = out.filter(isNoValue)
+    return out
+  }, [rows, gwFilter, busFilter, gwKey, busKey, noValueOnly, isNoValue])
 
   const colDefs = useMemo<ColDef[]>(() => {
     if (rows.length === 0) return []
@@ -146,6 +169,17 @@ export default function DataTable({ rows, gwFilter, busFilter, onGwFilterChange,
               <option key={v} value={v}>{v}</option>
             ))}
           </select>
+        )}
+        {valueKey && (
+          <button
+            className={`btn toolbar-btn${noValueOnly ? ' active' : ''}`}
+            title={`仅显示「${valueKey}」为空的表(当前无值 ${noValueCount.toLocaleString()} 行)`}
+            aria-pressed={noValueOnly}
+            onClick={() => onNoValueOnlyChange(!noValueOnly)}
+          >
+            只看无值
+            {noValueCount > 0 && <span className="toolbar-badge">{noValueCount.toLocaleString()}</span>}
+          </button>
         )}
       </div>
       <div className="grid ag-theme-quartz">

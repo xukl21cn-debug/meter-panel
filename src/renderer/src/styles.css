@@ -569,6 +569,45 @@ body {
   outline-offset: 1px;
 }
 
+/* 只看无值按钮 (靠右展示, 激活时高亮) */
+.toolbar-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.toolbar-btn.active {
+  background: #123b5c;
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.toolbar-btn.active:hover:not(:disabled) {
+  background: #17496f;
+  color: #dff3ff;
+}
+
+.toolbar-badge {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--border-bright);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbar-btn.active .toolbar-badge {
+  background: var(--cyan);
+  color: #062033;
+  font-weight: 600;
+}
+
 .grid {
   flex: 1;
   min-height: 0;
