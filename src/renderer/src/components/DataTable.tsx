@@ -3,6 +3,8 @@ import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, GetRowIdParams, GridApi, GridReadyEvent } from 'ag-grid-community'
 import type { TableRow } from '../../../shared/types'
 import { findValueColumn, isTimeColumnKey } from '../../../shared/columns'
+import TimeRangePicker, { formatDateTime } from './TimeRangePicker'
+import type { TimeRange } from './TimeRangePicker'
 
 interface Props {
   rows: TableRow[]
@@ -12,9 +14,12 @@ interface Props {
   busFilter: string
   /** 只看无值: 仅显示值列为空的表 */
   noValueOnly: boolean
+  /** 按时间列(最近获取时间)过滤的区间 */
+  timeRange: TimeRange | null
   onGwFilterChange: (v: string) => void
   onBusFilterChange: (v: string) => void
   onNoValueOnlyChange: (v: boolean) => void
+  onTimeRangeChange: (v: TimeRange | null) => void
   emptyText?: string
 }
 
@@ -43,9 +48,11 @@ export default function DataTable({
   gwFilter,
   busFilter,
   noValueOnly,
+  timeRange,
   onGwFilterChange,
   onBusFilterChange,
   onNoValueOnlyChange,
+  onTimeRangeChange,
   emptyText = '暂无数据'
 }: Props) {
   const [api, setApi] = useState<GridApi | null>(null)
@@ -55,6 +62,7 @@ export default function DataTable({
   const headerKeys = useMemo(() => (rows.length ? Object.keys(rows[0]).filter((k) => k !== '_idx') : []), [rows])
   const gwKey = useMemo(() => headerKeys.find((k) => k.includes('网关')), [headerKeys])
   const busKey = useMemo(() => headerKeys.find((k) => k.includes('总线')), [headerKeys])
+  const timeKey = useMemo(() => headerKeys.find((k) => isTimeColumnKey(k)) ?? null, [headerKeys])
 
   const gwOptions = useMemo(
     () => (gwKey ? unique(rows.map((r) => String(r[gwKey])).filter(Boolean)).sort() : []),
@@ -65,8 +73,7 @@ export default function DataTable({
     [rows, busKey]
   )
 
-  // 值列: 每行最后一个非序号列(水表=累计流量, 电表=电量); 无值=该列为空
-  // 值列: 最后一个非时间列(水表=累计流量, 电表=电量); 时间列(如「最近获取时间」)仅作展示
+  // 值列 = 最后一个非时间列(水表=累计流量, 电表=电量); 无值=该列为空; 时间列仅作展示/区间过滤
   const valueKey = useMemo(() => findValueColumn(rows), [rows])
   const isNoValue = useCallback(
     (r: TableRow) => {
@@ -78,14 +85,24 @@ export default function DataTable({
   )
   const noValueCount = useMemo(() => (valueKey ? rows.filter(isNoValue).length : 0), [rows, valueKey, isNoValue])
 
-  // 工具条过滤(网关/总线/只看无值, 与快速过滤叠加生效)
+  // 工具条过滤(网关/总线/只看无值/时间区间, 与快速过滤叠加生效)
   const filteredRows = useMemo(() => {
     let out = rows
     if (gwFilter) out = out.filter((r) => gwKey != null && String(r[gwKey]) === gwFilter)
     if (busFilter) out = out.filter((r) => busKey != null && String(r[busKey]) === busFilter)
     if (noValueOnly) out = out.filter(isNoValue)
+    if (timeRange && timeKey) {
+      // 时间列按 20xx-xx-xx xx:xx:xx 字符串比较, 与组件展示格式一致; 空时间不匹配
+      const lo = formatDateTime(timeRange[0])
+      const hi = formatDateTime(timeRange[1])
+      out = out.filter((r) => {
+        const t = String(r[timeKey] ?? '').trim()
+        if (!t) return false
+        return t >= lo && t <= hi
+      })
+    }
     return out
-  }, [rows, gwFilter, busFilter, gwKey, busKey, noValueOnly, isNoValue])
+  }, [rows, gwFilter, busFilter, gwKey, busKey, noValueOnly, isNoValue, timeRange, timeKey])
 
   const colDefs = useMemo<ColDef[]>(() => {
     if (rows.length === 0) return []
@@ -184,6 +201,7 @@ export default function DataTable({
             {noValueCount > 0 && <span className="toolbar-badge">{noValueCount.toLocaleString()}</span>}
           </button>
         )}
+        {timeKey && <TimeRangePicker value={timeRange} onChange={onTimeRangeChange} />}
       </div>
       <div className="grid ag-theme-quartz">
         <AgGridReact

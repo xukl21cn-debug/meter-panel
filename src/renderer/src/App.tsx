@@ -3,6 +3,7 @@ import Papa from 'papaparse'
 import type { AppConfig, TableData, TableRow } from '../../shared/types'
 import { API_PORT, normalizeHost } from '../../shared/defaults'
 import { findValueColumn } from '../../shared/columns'
+import type { TimeRange } from './components/TimeRangePicker'
 import DataTable from './components/DataTable'
 import SettingsModal from './components/SettingsModal'
 import StatusBar from './components/StatusBar'
@@ -24,6 +25,8 @@ export default function App() {
   const [busFilter, setBusFilter] = useState<Record<'water' | 'electricity', string>>({ water: '', electricity: '' })
   // 「只看无值」开关也按水/电分别保存
   const [noValueOnly, setNoValueOnly] = useState<Record<'water' | 'electricity', boolean>>({ water: false, electricity: false })
+  // 时间区间过滤也按水/电分别保存
+  const [timeRange, setTimeRange] = useState<Record<'water' | 'electricity', TimeRange | null>>({ water: null, electricity: null })
 
   useEffect(() => {
     window.api.getConfig().then(setConfig)
@@ -208,9 +211,11 @@ export default function App() {
             gwFilter={gwFilter[activeTab]}
             busFilter={busFilter[activeTab]}
             noValueOnly={noValueOnly[activeTab]}
+            timeRange={timeRange[activeTab]}
             onGwFilterChange={(v) => setGwFilter((p) => ({ ...p, [activeTab]: v }))}
             onBusFilterChange={(v) => setBusFilter((p) => ({ ...p, [activeTab]: v }))}
             onNoValueOnlyChange={(v) => setNoValueOnly((p) => ({ ...p, [activeTab]: v }))}
+            onTimeRangeChange={(v) => setTimeRange((p) => ({ ...p, [activeTab]: v }))}
             emptyText="暂无数据 · 请在设置里选择数据来源(本地内置样例 / 后端接口)"
           />
         </div>
