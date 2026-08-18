@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, GetRowIdParams, GridApi, GridReadyEvent } from 'ag-grid-community'
 import type { TableRow } from '../../../shared/types'
+import { findValueColumn, isTimeColumnKey } from '../../../shared/columns'
 
 interface Props {
   rows: TableRow[]
@@ -65,7 +66,8 @@ export default function DataTable({
   )
 
   // 值列: 每行最后一个非序号列(水表=累计流量, 电表=电量); 无值=该列为空
-  const valueKey = useMemo(() => (headerKeys.length ? headerKeys[headerKeys.length - 1] : null), [headerKeys])
+  // 值列: 最后一个非时间列(水表=累计流量, 电表=电量); 时间列(如「最近获取时间」)仅作展示
+  const valueKey = useMemo(() => findValueColumn(rows), [rows])
   const isNoValue = useCallback(
     (r: TableRow) => {
       if (!valueKey) return false
@@ -89,7 +91,8 @@ export default function DataTable({
     if (rows.length === 0) return []
     const keys = Object.keys(rows[0]).filter((k) => k !== '_idx')
     return keys.map((k) => {
-      const numeric = isNumericColumn(rows, k)
+      // 时间列按文本列处理(不右对齐、不用数字筛选), 避免把时间串当数字
+      const numeric = !isTimeColumnKey(k) && isNumericColumn(rows, k)
       const def: ColDef = {
         field: k,
         headerName: k,

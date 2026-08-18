@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Papa from 'papaparse'
 import type { AppConfig, TableData, TableRow } from '../../shared/types'
 import { API_PORT, normalizeHost } from '../../shared/defaults'
+import { findValueColumn } from '../../shared/columns'
 import DataTable from './components/DataTable'
 import SettingsModal from './components/SettingsModal'
 import StatusBar from './components/StatusBar'
@@ -132,11 +133,11 @@ export default function App() {
   const lastRefresh = Math.max(water.fetchedAt, elec.fetchedAt)
   const noticeError = notice?.startsWith('数据获取失败') || notice?.startsWith('导出失败')
 
-  // 统计每个表最后一个值列(电量/累计流量)有数据/无数据的行数
+  // 统计每个表值列(电量/累计流量)有数据/无数据的行数; 时间列不算值列
   const countHasData = (rows: TableRow[]) => {
     if (rows.length === 0) return { has: 0, empty: 0 }
-    const keys = Object.keys(rows[0]).filter((k) => k !== '_idx')
-    const valueCol = keys[keys.length - 1]
+    const valueCol = findValueColumn(rows)
+    if (!valueCol) return { has: 0, empty: rows.length }
     let has = 0
     let empty = 0
     for (const r of rows) {
