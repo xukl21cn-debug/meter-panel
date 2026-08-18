@@ -4,6 +4,10 @@ import { DEFAULT_CONFIG, loadConfig, saveConfig } from './config'
 import { registerDataHandlers } from './api'
 import type { AppConfig } from '../shared/types'
 
+// 统一配置目录: 开发版与打包版固定使用 appData/meter-panel,
+// 不随 exe 名/productName 变化, 保证两套环境配置互通。
+app.setPath('userData', join(app.getPath('appData'), 'meter-panel'))
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,

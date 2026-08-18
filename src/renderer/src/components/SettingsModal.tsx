@@ -11,6 +11,7 @@ interface Props {
 export default function SettingsModal({ config, onClose, onSave }: Props) {
   const [form, setForm] = useState<AppConfig>({ ...config })
   const [error, setError] = useState<string | null>(null)
+  const [showPass, setShowPass] = useState(false)
 
   const set = <K extends keyof AppConfig>(k: K, v: AppConfig[K]) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -71,6 +72,33 @@ export default function SettingsModal({ config, onClose, onSave }: Props) {
               <p className="field-hint">自动拼接的接口地址:</p>
               <p className="field-hint mono">{buildWaterUrl(form.serverHost)}</p>
               <p className="field-hint mono">{buildElectricityUrl(form.serverHost)}</p>
+            </div>
+
+            <div className="form-field">
+              <label>后端认证(HTTP Basic Auth · 可选)</label>
+              <div className="auth-row">
+                <input
+                  type="text"
+                  value={form.authUser}
+                  spellCheck={false}
+                  placeholder="用户名(账号)"
+                  onChange={(e) => set('authUser', e.target.value)}
+                />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  value={form.authPass}
+                  spellCheck={false}
+                  placeholder="密码"
+                  onChange={(e) => set('authPass', e.target.value)}
+                />
+              </div>
+              <div className="radio-row">
+                <label className="radio">
+                  <input type="checkbox" checked={showPass} onChange={() => setShowPass((v) => !v)} />
+                  <span>显示密码</span>
+                </label>
+              </div>
+              <p className="field-hint">已默认填好现场账号/密码(打包后即可直连后端);后端地址或口令变更时在此修改。</p>
             </div>
           </>
         )}

@@ -36,12 +36,17 @@ export function extractHostFromUrl(url: string): string {
 export const DEFAULT_CONFIG: AppConfig = {
   dataSource: 'http',
   serverHost: '10.148.201.103',
-  refreshIntervalSec: 60
+  refreshIntervalSec: 60,
+  // 现场默认账号密码: 打包后无需任何配置即可直连后端(如需改后端可在设置中调整)
+  authUser: 'ess',
+  authPass: '123456'
 }
 
 /** 本地内置样例配置(仅离线演示) */
 export const LOCAL_CONFIG: AppConfig = {
   dataSource: 'local',
   serverHost: '',
-  refreshIntervalSec: 60
+  refreshIntervalSec: 60,
+  authUser: '',
+  authPass: ''
 }

@@ -698,7 +698,8 @@ body {
 }
 
 .form-field input[type='text'],
-.form-field input[type='number'] {
+.form-field input[type='number'],
+.form-field input[type='password'] {
   width: 100%;
   background: #0d1526;
   border: 1px solid var(--border-bright);
@@ -718,6 +719,16 @@ body {
   display: flex;
   gap: 18px;
   flex-wrap: wrap;
+}
+
+.auth-row {
+  display: flex;
+  gap: 10px;
+}
+
+.auth-row input {
+  flex: 1;
+  min-width: 0;
 }
 
 .radio {

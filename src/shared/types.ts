@@ -9,6 +9,10 @@ export interface AppConfig {
   serverHost: string
   /** 表格自动刷新间隔(秒),仅 http 模式生效 */
   refreshIntervalSec: number
+  /** 后端 HTTP Basic 认证用户名(留空则不发送认证头) */
+  authUser: string
+  /** 后端 HTTP Basic 认证密码(留空则按空密码发送,配合 authUser 使用) */
+  authPass: string
 }
 
 /** 后端轮询状态(进度控制功能保留未启用,类型备用) */

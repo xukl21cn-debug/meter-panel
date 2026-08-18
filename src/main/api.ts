@@ -7,14 +7,30 @@ import { buildElectricityUrl, buildWaterUrl } from '../shared/defaults'
 
 const TIMEOUT_MS = 15000
 
-async function request(url: string, init: RequestInit = {}): Promise<Response> {
+/** 后端 HTTP Basic 认证信息(留空 user 则不发送认证头) */
+interface BasicAuth {
+  user?: string
+  pass?: string
+}
+
+async function request(url: string, auth?: BasicAuth): Promise<Response> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
-    const res = await fetch(url, { ...init, signal: ctrl.signal })
-    if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+    const headers: Record<string, string> = {}
+    if (auth?.user) {
+      // RFC 7617: 用户名:密码 经 base64 编码后放在 Authorization 头
+      headers['Authorization'] = 'Basic ' + Buffer.from(`${auth.user}:${auth.pass ?? ''}`, 'utf8').toString('base64')
+    }
+    const res = await fetch(url, { headers, signal: ctrl.signal })
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) throw new Error(`认证失败(HTTP ${res.status}) — 后端口令错误或已变更, 请在「设置」中检查后端认证账号/密码。`)
+      throw new Error(`HTTP ${res.status} ${res.statusText}`)
+    }
     return res
   } catch (err) {
+    // 服务端已响应但返回非 2xx: 属于认证/业务错误, 直接透传, 不当作网络问题
+    if (err instanceof Error && (err.message.startsWith('认证失败') || err.message.startsWith('HTTP '))) throw err
     const cause = (err as { cause?: { code?: string } })?.cause
     const short = url.replace(/^https?:\/\//, '')
     if (cause?.code === 'ECONNREFUSED') throw new Error(`连接被拒绝(${short}) — 请确认服务已启动并监听该端口。`)
@@ -65,8 +81,8 @@ function readLocalCsv(fileName: string): string {
   return decodeBuffer(readFileSync(p))
 }
 
-async function fetchHttpCsv(url: string): Promise<string> {
-  const res = await request(url)
+async function fetchHttpCsv(url: string, config: AppConfig): Promise<string> {
+  const res = await request(url, { user: config.authUser, pass: config.authPass })
   return decodeBuffer(Buffer.from(await res.arrayBuffer()))
 }
 
@@ -81,8 +97,8 @@ export async function getCsvBatch(config: AppConfig): Promise<CsvBatch> {
     }
   }
   const [water, electricity] = await Promise.all([
-    fetchHttpCsv(buildWaterUrl(config.serverHost)),
-    fetchHttpCsv(buildElectricityUrl(config.serverHost))
+    fetchHttpCsv(buildWaterUrl(config.serverHost), config),
+    fetchHttpCsv(buildElectricityUrl(config.serverHost), config)
   ])
   return { water, electricity, source: 'http', fetchedAt: Date.now() }
 }

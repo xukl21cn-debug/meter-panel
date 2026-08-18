@@ -49,7 +49,9 @@ export function loadConfig(): AppConfig {
       refreshIntervalSec:
         typeof parsed.refreshIntervalSec === 'number' && parsed.refreshIntervalSec >= 1
           ? parsed.refreshIntervalSec
-          : DEFAULT_CONFIG.refreshIntervalSec
+          : DEFAULT_CONFIG.refreshIntervalSec,
+      authUser: typeof parsed.authUser === 'string' ? parsed.authUser : DEFAULT_CONFIG.authUser,
+      authPass: typeof parsed.authPass === 'string' ? parsed.authPass : DEFAULT_CONFIG.authPass
     }
   } catch {
     return { ...DEFAULT_CONFIG }
