@@ -1,6 +1,6 @@
 {
   "name": "meter-panel",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "水电表数据桌面展示面板",
   "main": "out/main/index.js",
   "private": true,
