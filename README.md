@@ -154,4 +154,125 @@ npm run dist:portable   # 只要绿色版(单文件免安装)
 
 ## 技术栈
 
+### 现在版本
+
 Electron 33 + electron-vite + React 18 + TypeScript + AG Grid 33(Community) + PapaParse + iconv-lite
+
+### 后续扩展
+
+* TanStack(指标列表/实时日志, 暂时不加)
+* React Router
+* Zod(这是什么)
+* TanStack Query(http请求?暂时不需要)
+* Zustand
+* Tailwind v4 + shadcn/ui(UI组件)
+* Vitest(这又是什么)
+
+### 升级后的技术选型
+
+Electron
+├── electron-vite
+├── React 18
+├── TypeScript
+│
+├── UI
+│   ├── Tailwind CSS v4
+│   ├── shadcn/ui
+│   └── Lucide
+│
+├── Routing
+│   └── React Router v7
+│
+├── State
+│   └── Zustand
+│
+├── Runtime Schema / Contract
+│   └── Zod 4
+│
+├── Data Grid
+│   └── AG Grid Community 33
+│
+├── Existing utilities
+│   ├── PapaParse
+│   └── iconv-lite
+│
+└── Later, when needed
+    ├── React Hook Form
+    ├── TanStack Query
+    ├── ECharts
+    ├── Vitest
+    └── Playwright
+
+### 结合ai的功能实现流程
+
+tech-stack.md
+architecture.md
+      ↓
+Codex 阅读代码库
+      ↓
+针对具体 Feature / 重构目标起草 Spec
+      ↓
+你审查 Spec
+      ↓
+必要时修改 / 补充约束
+      ↓
+Spec 定稿
+      ↓
+Codex 按 Spec 实现
+      ↓
+测试 / 验收
+      ↓
+如果实现暴露出新的长期规则
+      ↓
+再反向更新 architecture.md / tech-stack.md
+
+### 新增功能参考prompt
+
+```markdown
+Read these files first:
+
+- docs/tech-stack.md
+- docs/architecture.md
+
+Then inspect the relevant existing code.
+
+Do not modify code yet.
+
+Create a feature specification for:
+[功能描述]
+
+The specification must:
+- comply with the project architecture;
+- reuse the existing technology stack;
+- identify affected modules;
+- define functional requirements;
+- define non-functional requirements;
+- define acceptance criteria;
+- identify uncertainties and assumptions;
+- avoid implementation details unless required by architecture constraints.
+```
+
+等codex产出docs/specs/xxx.md后
+
+```markdown
+Read:
+- docs/tech-stack.md
+- docs/architecture.md
+- docs/specs/xxx.md
+
+Inspect the current implementation.
+
+Create an implementation plan only.
+Do not modify code.
+```
+
+最后实现:
+
+```markdown
+Implement the approved plan and spec.
+
+Do not introduce dependencies not allowed by tech-stack.md.
+Do not violate architecture.md.
+Run the required checks after each logical stage.
+```
+
