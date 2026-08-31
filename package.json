@@ -14,6 +14,7 @@
     "icon": "node scripts/gen-icon.js"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.102.8",
     "ag-grid-community": "^33.2.0",
     "ag-grid-react": "^33.2.0",
     "iconv-lite": "^0.6.3",

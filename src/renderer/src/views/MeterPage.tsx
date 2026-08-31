@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Papa from 'papaparse'
-import type { AppConfig, TableData, TableRow } from '../../../shared/types'
+import { useQueryClient } from '@tanstack/react-query'
+import type { AppConfig, TableRow } from '../../../shared/types'
 import { API_PORT, normalizeHost } from '../../../shared/defaults'
 import { findValueColumn } from '../../../shared/columns'
+import { meterQueryKey, useMeterData } from '../query/meterData'
 import DataTable from '../components/DataTable'
 import StatusBar from '../components/StatusBar'
 import SettingsModal from '../components/SettingsModal'
@@ -13,13 +14,9 @@ interface Props {
 }
 
 export default function MeterPage({ config, onConfigSaved }: Props) {
-  const [water, setWater] = useState<TableData>({ rows: [], fetchedAt: 0, error: null })
-  const [elec, setElec] = useState<TableData>({ rows: [], fetchedAt: 0, error: null })
+  const queryClient = useQueryClient()
   const [autoRefresh, setAutoRefresh] = useState(true)
-  const [busy, setBusy] = useState(false)
   const [exporting, setExporting] = useState(false)
-  // 自动刷新倒计时的基准: 最近一次成功刷新时刻
-  const [lastFetchAt, setLastFetchAt] = useState(0)
   const [showSettings, setShowSettings] = useState(false)
   const [activeTab, setActiveTab] = useState<'water' | 'electricity'>('water')
   const [notice, setNotice] = useState<string | null>(null)
@@ -29,51 +26,31 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
   // 「只看无值」开关也按水/电分别保存
   const [noValueOnly, setNoValueOnly] = useState<Record<'water' | 'electricity', boolean>>({ water: false, electricity: false })
 
-  /**
-   * 严格按 CSV 表头解析:每行只保留表头里有的列(缺的补空字符串),
-   * 不多不少,与源文件列完全一致。
-   */
-  const parseCsv = useCallback((text: string): TableRow[] => {
-    const result = Papa.parse<Record<string, string>>(text.trim(), { header: true, skipEmptyLines: true })
-    const header = result.meta.fields ?? []
-    return result.data.map((row, i) => {
-      const out: TableRow = { _idx: i }
-      for (const k of header) out[k] = row[k] ?? ''
-      return out
-    })
-  }, [])
+  // 数据: React Query 统一管理拉取/轮询/失败, 失败时保留上次成功数据
+  const { data, isFetching, isError, error, refetch, dataUpdatedAt } = useMeterData(config, autoRefresh)
+  const waterRows = data?.waterRows ?? []
+  const elecRows = data?.elecRows ?? []
 
-  const fetchTables = useCallback(async () => {
-    if (!config) return
-    setBusy(true)
-    try {
-      const batch = await window.api.getCsvs()
-      setLastFetchAt(Date.now())
-      setWater({ rows: parseCsv(batch.water), fetchedAt: batch.fetchedAt, error: null })
-      setElec({ rows: parseCsv(batch.electricity), fetchedAt: batch.fetchedAt, error: null })
-      console.log(`[fetchTables] ok source=${batch.source} water=${batch.water.trim().split('\n').length - 1} electricity=${batch.electricity.trim().split('\n').length - 1}`)
-    } catch (err) {
-      const msg = cleanErrMsg(err)
-      console.error('[fetchTables] 拉取数据失败:', msg)
-      setWater({ rows: [], fetchedAt: 0, error: msg })
-      setElec({ rows: [], fetchedAt: 0, error: msg })
-      setNotice(`数据获取失败: ${msg}`)
-    } finally {
-      setBusy(false)
-    }
-  }, [config, parseCsv])
+  // 去掉 IPC 包装前缀,只保留可读的错误信息
+  const cleanErrMsg = (err: unknown): string => {
+    let msg = err instanceof Error ? err.message : String(err)
+    msg = msg.replace(/^Error invoking remote method '[^']+':\s*/, '')
+    msg = msg.replace(/^Error:\s*/, '')
+    return msg
+  }
 
-  // 首次加载 + 配置变化时立即拉取;只有 http 模式做定时自动刷新
+  // 失败时弹出错误通知(保留表格旧数据; 成功刷新后自动消失)
+  const lastErrorMsg = isError ? cleanErrMsg(error) : null
   useEffect(() => {
-    if (!config) return
-    fetchTables()
-    if (config.dataSource !== 'http') return
-    if (!autoRefresh) return
-    const id = window.setInterval(fetchTables, Math.max(1, config.refreshIntervalSec) * 1000)
-    return () => window.clearInterval(id)
-  }, [config, autoRefresh, fetchTables])
+    if (lastErrorMsg) setNotice(`数据获取失败: ${lastErrorMsg}`)
+  }, [lastErrorMsg])
 
-  // 通知自动消失
+  // 手动刷新按钮
+  const handleRefresh = useCallback(() => {
+    refetch()
+  }, [refetch])
+
+  // 通知自动消失(与原有行为一致: 错误/成功通知都 6 秒后消失)
   useEffect(() => {
     if (!notice) return
     const id = window.setTimeout(() => setNotice(null), 6000)
@@ -94,7 +71,7 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
     config && config.dataSource === 'http' && autoRefresh
       ? Math.min(
           Math.max(1, Math.round(intervalMs / 1000)),
-          Math.max(0, Math.ceil((lastFetchAt + intervalMs - now) / 1000))
+          Math.max(0, Math.ceil((dataUpdatedAt + intervalMs - now) / 1000))
         )
       : null
 
@@ -117,9 +94,11 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
       onConfigSaved(saved)
       setShowSettings(false)
       setNotice('配置已保存并应用')
-      await fetchTables()
+      // 失效当前/新增 key 的缓存: 配置不变时(如仅改密码)也强制重拉;
+      // 配置改变时 queryKey 变化, 新 key 自动拉取, 旧 key 缓存被失效也不会重复拉
+      await queryClient.invalidateQueries({ queryKey: meterQueryKey(saved) })
     },
-    [fetchTables, onConfigSaved]
+    [onConfigSaved, queryClient]
   )
 
   // 数据来源标签
@@ -130,7 +109,7 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
     return host ? `${host}:${API_PORT}` : '后端接口'
   }, [config])
 
-  const lastRefresh = Math.max(water.fetchedAt, elec.fetchedAt)
+  const lastRefresh = dataUpdatedAt
   const noticeError = notice?.startsWith('数据获取失败') || notice?.startsWith('导出失败')
 
   // 统计每个表值列(电量/累计流量)有数据/无数据的行数; 时间列不算值列
@@ -147,35 +126,27 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
     }
     return { has, empty }
   }
-  const waterData = countHasData(water.rows)
-  const elecData = countHasData(elec.rows)
-
-  // 去掉 IPC 包装前缀,只保留可读的错误信息
-  const cleanErrMsg = (err: unknown): string => {
-    let msg = err instanceof Error ? err.message : String(err)
-    msg = msg.replace(/^Error invoking remote method '[^']+':\s*/, '')
-    msg = msg.replace(/^Error:\s*/, '')
-    return msg
-  }
+  const waterData = countHasData(waterRows)
+  const elecData = countHasData(elecRows)
 
   return (
     <div className="meter-page">
       <StatusBar
         source={sourceLabel}
-        waterCount={water.rows.length}
-        elecCount={elec.rows.length}
+        waterCount={waterRows.length}
+        elecCount={elecRows.length}
         waterHas={waterData.has}
         waterEmpty={waterData.empty}
         elecHas={elecData.has}
         elecEmpty={elecData.empty}
         lastRefresh={lastRefresh}
-        busy={busy}
+        busy={isFetching}
         exporting={exporting}
         autoRefresh={autoRefresh}
         autoRefreshAvailable={config?.dataSource === 'http'}
         countdownSec={countdownSec}
         onToggleAuto={() => setAutoRefresh((v) => !v)}
-        onRefresh={() => fetchTables()}
+        onRefresh={handleRefresh}
         onExport={() => exportCsvs()}
         onOpenSettings={() => setShowSettings(true)}
       />
@@ -190,7 +161,7 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
             className={`tab ${activeTab === 'water' ? 'active' : ''}`}
             onClick={() => setActiveTab('water')}
           >
-            水表 <span className="tab-count">{water.rows.length.toLocaleString()}</span>
+            水表 <span className="tab-count">{waterRows.length.toLocaleString()}</span>
           </button>
           <button
             role="tab"
@@ -198,13 +169,13 @@ export default function MeterPage({ config, onConfigSaved }: Props) {
             className={`tab ${activeTab === 'electricity' ? 'active' : ''}`}
             onClick={() => setActiveTab('electricity')}
           >
-            电表 <span className="tab-count">{elec.rows.length.toLocaleString()}</span>
+            电表 <span className="tab-count">{elecRows.length.toLocaleString()}</span>
           </button>
         </div>
         <div className="tabpanel" role="tabpanel">
           <DataTable
             key={activeTab}
-            rows={activeTab === 'water' ? water.rows : elec.rows}
+            rows={activeTab === 'water' ? waterRows : elecRows}
             gwFilter={gwFilter[activeTab]}
             busFilter={busFilter[activeTab]}
             noValueOnly={noValueOnly[activeTab]}
