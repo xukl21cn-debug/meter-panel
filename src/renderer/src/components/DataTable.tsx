@@ -20,6 +20,13 @@ interface Props {
 
 const NUMERIC_RE = /^-?\d+(\.\d+)?$/
 
+/**
+ * 模块级常量: 保持引用稳定。
+ * 若每次渲染内联创建新对象, ag-grid-react 会判定为属性变化, 触发
+ * recreateColumnDefs 重建列树, 导致打开的排序/筛选菜单被销毁关闭。
+ */
+const STABLE_DEFAULT_COL_DEF = { minWidth: 90, resizable: true } as const
+
 /** 采样判断列是否数值型(用于对齐/数字筛选/数值排序) */
 function isNumericColumn(rows: TableRow[], key: string): boolean {
   let num = 0
@@ -123,6 +130,9 @@ export default function DataTable({
     [firstKey]
   )
 
+  // 引用稳定(useCallback): 避免每秒倒计时重渲染时被 ag-grid-react 判为 prop 变化
+  const handleGridReady = useCallback((e: GridReadyEvent) => setApi(e.api), [])
+
   useEffect(() => {
     if (api) api.setGridOption('quickFilterText', search)
   }, [api, search])
@@ -194,8 +204,8 @@ export default function DataTable({
           enableCellTextSelection={true}
           animateRows
           rowBuffer={5}
-          defaultColDef={{ minWidth: 90, resizable: true }}
-          onGridReady={(e: GridReadyEvent) => setApi(e.api)}
+          defaultColDef={STABLE_DEFAULT_COL_DEF}
+          onGridReady={handleGridReady}
         />
       </div>
     </div>
