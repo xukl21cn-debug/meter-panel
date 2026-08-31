@@ -10,10 +10,10 @@ app.setPath('userData', join(app.getPath('appData'), 'meter-panel'))
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 840,
-    minWidth: 960,
-    minHeight: 640,
+    width: 1440,
+    height: 900,
+    minWidth: 1080,
+    minHeight: 700,
     title: '水电表数据面板',
     autoHideMenuBar: true,
     backgroundColor: '#0a1120',
