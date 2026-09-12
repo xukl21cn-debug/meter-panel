@@ -2,7 +2,7 @@
 
 > 状态：项目级长期约束  
 > 适用范围：本仓库中的人工开发、Codex/agent 生成代码、重构与依赖变更  
-> 最后更新：2026-08-31
+> 最后更新：2026-09-12
 
 ## 1. 目的
 
@@ -113,6 +113,9 @@
 - 轮询条件(如"仅 http 模式且自动刷新开启")用 `refetchInterval` 返回 `false` 暂停 / 数字开启,不得再手写 `setInterval`。
 - 失败处理:默认 `retry: false`(等下一轮询周期),失败时保留上次成功数据并展示错误提示;禁止清空表格缓存数据。
 - queryKey 必须包含决定数据来源的字段(config 的 `dataSource`/`serverHost`),配置变化时自动重拉,不得手动叠加多余 refetch。
+- 轮询 **MUST** 显式设置 `refetchIntervalInBackground: true`。默认行为是窗口不可见(`document.visibilityState === 'hidden'`,即最小化或被完全遮挡)时跳过每一次轮询,面板会在后台静默停止更新,而倒计时仍显示 `0s` 造成"卡住"的错觉。
+- QueryClient 的 `networkMode` **MUST** 为 `'always'`。默认值 `'online'` 依据 `navigator.onLine` 判定,现场机器若只有内网、无外网出口,可能被判为离线,使请求被无限期挂起、界面始终无数据。
+- 切换数据源/后端地址时 **SHOULD** 使用 `placeholderData: keepPreviousData` 保留上一份数据,避免表格先闪成空态;失败时仍按上面的规则回到错误提示。
 
 ## 5. AG Grid Community 33 规则
 

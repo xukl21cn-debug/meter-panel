@@ -158,13 +158,12 @@ npm run dist:portable   # 只要绿色版(单文件免安装)
 
 Electron 33 + electron-vite + React 18 + TypeScript + AG Grid 33(Community) + PapaParse + iconv-lite
 
+已落地: React Router 7(Declarative + HashRouter) + Zustand 5(侧边栏折叠状态) + TanStack Query 5(CSV 获取与轮询)
+
 ### 后续扩展
 
 * TanStack(指标列表/实时日志, 暂时不加)
-* React Router
 * Zod(这是什么)
-* TanStack Query(http请求?暂时不需要)
-* Zustand
 * Tailwind v4 + shadcn/ui(UI组件)
 * Vitest(这又是什么)
 
@@ -186,6 +185,9 @@ Electron
 ├── State
 │   └── Zustand
 │
+├── Server State
+│   └── TanStack Query
+│
 ├── Runtime Schema / Contract
 │   └── Zod 4
 │
@@ -198,7 +200,6 @@ Electron
 │
 └── Later, when needed
     ├── React Hook Form
-    ├── TanStack Query
     ├── ECharts
     ├── Vitest
     └── Playwright
