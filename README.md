@@ -168,43 +168,6 @@ Electron 33 + electron-vite + React 18 + TypeScript + AG Grid 33(Community) + Pa
 
 > 各选型的完整约束、基线规则与依赖变更流程以 [`docs/tech-stack.md`](./docs/tech-stack.md) 为准,引入新依赖前先读该文档 §7。
 
-### 升级后的技术选型
-
-Electron
-├── electron-vite
-├── React 18
-├── TypeScript
-│
-├── UI
-│   ├── Tailwind CSS v4
-│   ├── shadcn/ui
-│   └── react-icons
-│
-├── Routing
-│   └── React Router v7
-│
-├── State
-│   └── Zustand
-│
-├── Server State
-│   └── TanStack Query
-│
-├── Runtime Schema / Contract
-│   └── Zod 4
-│
-├── Data Grid
-│   └── AG Grid Community 33
-│
-├── Existing utilities
-│   ├── PapaParse
-│   └── iconv-lite
-│
-└── Later, when needed(均需独立 spec 或真实需求)
-    ├── React Hook Form
-    ├── ECharts
-    ├── Vitest
-    └── Playwright
-
 ### 结合ai的功能实现流程
 
 tech-stack.md
