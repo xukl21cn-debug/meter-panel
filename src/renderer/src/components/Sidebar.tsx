@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { FiBarChart2, FiVideo, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
-import { useSidebarStore } from '../store/sidebar'
+import { useSidebarStore } from '../stores/sidebar'
 
 export default function Sidebar() {
   const collapsed = useSidebarStore((s) => s.collapsed)

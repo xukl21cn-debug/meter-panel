@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import type { AppConfig } from '../../shared/types'
-import MeterPage from './views/MeterPage'
-import CameraPage from './views/CameraPage'
+import MeterPage from './pages/MeterPage'
+import CameraPage from './pages/CameraPage'
 import Sidebar from './components/Sidebar'
 
 export default function App() {

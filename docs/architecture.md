@@ -2,7 +2,7 @@
 
 > 状态：项目级长期约束  
 > 适用范围：`src/main`、`src/preload`、`src/renderer`、`src/shared` 及其后续演进  
-> 最后更新：2026-08-19
+> 最后更新：2026-09-12
 
 ## 1. 目标
 
@@ -255,6 +255,9 @@ src/
 │       ├── components/
 │       ├── env.d.ts
 │       ├── main.tsx
+│       ├── pages/
+│       ├── query/
+│       ├── stores/
 │       └── styles.css
 └── shared/
     ├── columns.ts
@@ -270,6 +273,7 @@ src/
 | 某领域已有多个组件、hooks 与数据编排 | 建立 `renderer/src/features/<domain>/` |
 | 添加第一个 shadcn 基础组件 | 建立 `renderer/src/components/ui/` |
 | 出现第一个跨组件共享状态 | 建立 `renderer/src/stores/` 或领域内 store |
+| 出现第一个跨组件共享的远程数据查询 | 建立 `renderer/src/query/` |
 | IPC handler 增多且 `main/index.ts` 职责过重 | 建立 `main/ipc/` |
 | main 中网络/配置/文件逻辑需要独立测试或复用 | 建立 `main/services/` |
 | 引入第一个 Zod 跨边界契约 | 建立 `shared/schemas/` |
