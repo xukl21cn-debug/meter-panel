@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import Papa from 'papaparse'
 import type { AppConfig, TableRow } from '../../../shared/types'
 
@@ -44,6 +44,10 @@ export function useMeterData(config: AppConfig | null, autoRefresh: boolean) {
     enabled: !!config,
     // 轮询: 仅 http 模式且开启自动刷新时每 refreshIntervalSec 重拉一次
     refetchInterval: httpMode && autoRefresh ? Math.max(1, (config?.refreshIntervalSec ?? 60) * 1000) : false,
+    // 窗口最小化/被完全遮挡时也继续轮询(默认会跳过, 导致面板在后台不再更新)
+    refetchIntervalInBackground: true,
+    // 切换数据源/后端地址时沿用上一份数据, 避免表格先闪成空态
+    placeholderData: keepPreviousData,
     staleTime: 0,
     // 失败不自动重试(与现状一致: 等下一个轮询周期再拉)
     retry: false,

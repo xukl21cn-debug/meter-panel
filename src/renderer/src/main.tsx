@@ -16,7 +16,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: false,
       refetchOnWindowFocus: false,
-      refetchOnReconnect: false
+      refetchOnReconnect: false,
+      // 现场多为无外网的内网环境, navigator.onLine 可能为 false;
+      // 默认 networkMode('online') 会把请求一直挂起, 这里固定按"始终可发请求"处理
+      networkMode: 'always'
     }
   }
 })
