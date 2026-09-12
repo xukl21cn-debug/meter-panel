@@ -2,7 +2,7 @@
 
 > 状态：项目级长期约束  
 > 适用范围：本仓库中的人工开发、Codex/agent 生成代码、重构与依赖变更  
-> 最后更新：2026-08-19
+> 最后更新：2026-08-31
 
 ## 1. 目的
 
@@ -30,6 +30,10 @@
 | 打包 | electron-builder 26 | 已安装并保留 |
 | CSV | PapaParse 5 | 已安装并保留 |
 | 字符编码 | iconv-lite 0.6 | 已安装并保留 |
+| 路由器 | React Router 7（当前依赖 `^7.18.3`） | 已安装(Declarative Mode + HashRouter) |
+| 服务端状态 | TanStack Query 5（`@tanstack/react-query`） | 已安装,渲染进程远程数据访问统一走 Query |
+| 客户端状态 | Zustand（当前依赖 `^5.x`） | 已安装,仅承载跨组件共享的 UI 状态 |
+| 图标 | react-icons（Feather/Lucide 系列） | 已安装,业务图标统一从 react-icons 取 |
 
 ### 基线规则
 
@@ -46,7 +50,7 @@
 | --- | --- | --- |
 | 样式 | Tailwind CSS v4 | 用于新 UI 的布局、间距、颜色和响应式样式；不得借引入之机一次性重写所有现有 CSS |
 | UI 组件 | shadcn/ui | 组件源码归项目所有；仅添加实际需要的组件，不批量生成组件 |
-| 图标 | Lucide | 统一使用 React 图标包；业务组件不混用另一套通用图标库 |
+| 图标 | react-icons | 统一使用 react-icons(含 Feather/Lucide 多系列)；业务组件不混用图标库来源 |
 | 路由 | React Router v7 | 使用 Declarative Mode；不使用 Framework Mode，不升级到 v8 |
 | 客户端状态 | Zustand | 只承载确有跨组件共享需求的客户端状态 |
 | 运行时契约 | Zod 4 | 用于 IPC、配置、HTTP/CSV 解析结果等不可信边界的数据校验，并作为相关 TypeScript 类型来源 |
@@ -58,12 +62,13 @@
 - 原生 CSS 可以继续用于全局基础样式、复杂动画、第三方组件适配和 Tailwind 不适合表达的规则。
 - 迁移应渐进进行。仅因引入 Tailwind，不得改动无关组件的视觉行为。
 
-### 3.2 shadcn/ui 与 Lucide
+### 3.2 shadcn/ui 与 react-icons
 
-- shadcn/ui 是项目内源码，不是不可修改的黑盒依赖；通用修正应在 `components/ui/` 内保持一致。
-- 只在有真实使用方时添加组件，禁止提前生成整套组件或空目录。
-- 业务组件应组合基础 UI 组件，不应把业务状态、IPC 调用或数据获取逻辑写进 `components/ui/`。
-- 图标默认来自 Lucide；使用图标时应提供清晰的可访问名称或与可见文本配合。
+- shadcn/ui 是项目内源码,不是不可修改的黑盒依赖;通用修正应在 `components/ui/` 内保持一致。
+- 只在有真实使用方时添加组件,禁止提前生成整套组件或空目录。
+- 业务组件应组合基础 UI 组件,不应把业务状态、IPC 调用或数据获取逻辑写进 `components/ui/`。
+- 图标默认来自 react-icons;同一业务/页面内应选用同一系列(如 Feather `fi` / Lucide `lu`),避免混用风格差异大的系列。
+- 使用图标时应提供清晰的可访问名称或与可见文本配合。
 
 ### 3.3 React Router v7
 
@@ -95,12 +100,19 @@
 | --- | --- |
 | TanStack Table | 不引入；结构化数据表格统一使用 AG Grid Community 33 |
 | TanStack Virtual | 不引入；表格虚拟化由 AG Grid 提供，非表格超长列表需另行评估 |
-| TanStack Query | 暂不引入；当前数据访问通过受控 IPC/main service 完成，出现复杂远程缓存需求后再评估 |
 | React Hook Form | 暂不引入；现阶段表单规模不足以证明新增抽象的必要性 |
 | Apache ECharts | 暂不引入；出现明确趋势图、统计图与性能指标后再做可视化 spec |
 | Playwright | 暂不引入；Electron E2E 测试在独立测试迁移中设计 |
 
 “暂不引入”不是永久禁止，但 agent **MUST NOT** 仅以流行度、便利性或“最佳实践”为由自行加入。
+
+### 4.1 TanStack Query 已引入(替代 setInterval 手动轮询)
+
+- 渲染进程的远程数据(当前为 `water`/`electricity` 两个 CSV)统一通过 `@tanstack/react-query` 的 `useQuery` 获取与轮询。
+- queryFn **MUST** 只做"取数据 + 解析",不直接改组件状态;组件通过 `data` / `isFetching` / `dataUpdatedAt` 消费。
+- 轮询条件(如"仅 http 模式且自动刷新开启")用 `refetchInterval` 返回 `false` 暂停 / 数字开启,不得再手写 `setInterval`。
+- 失败处理:默认 `retry: false`(等下一轮询周期),失败时保留上次成功数据并展示错误提示;禁止清空表格缓存数据。
+- queryKey 必须包含决定数据来源的字段(config 的 `dataSource`/`serverHost`),配置变化时自动重拉,不得手动叠加多余 refetch。
 
 ## 5. AG Grid Community 33 规则
 
