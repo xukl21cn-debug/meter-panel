@@ -12,6 +12,7 @@
   - **本地内置样例**:直接展示 `resources/meter-data/` 下内置的数据文件,不发起任何网络请求,便于离线演示
 - 💾 **导出 CSV**:点击「导出 CSV」——后端模式导出内存中缓存的**最新**数据;本地模式导出内置文件;默认写入桌面(`water_meter.csv` / `power_meter.csv`,带 BOM,Excel 直接打开)
 - 🧰 **编码自适应**:CSV 支持 UTF-8(含 BOM)与 GBK,中文不乱码
+- 🎥 **摄像头页(规划中)**:侧边栏已提供「摄像头」入口与路由,页面当前为占位状态,尚未接入实时画面
 
 ## 快速开始
 
@@ -109,12 +110,12 @@ npm run dist            # 同时产出安装版 + 绿色版(产物在 dist/)
 npm run dist:portable   # 只要绿色版(单文件免安装)
 ```
 
-产物(位于 `dist/`):
+产物(位于 `dist/`;文件名中的 `<版本>` 取自 `package.json` 的 `version`):
 
 | 文件 | 说明 |
 |------|------|
-| `meter-panel-Setup-0.1.0.exe` | 安装版(NSIS 向导,可选安装目录、创建桌面快捷方式) |
-| `meter-panel-0.1.0-portable.exe` | 绿色版(单文件,免安装,双击即用) |
+| `meter-panel-Setup-<版本>.exe` | 安装版(NSIS 向导,可选安装目录、创建桌面快捷方式) |
+| `meter-panel-<版本>-portable.exe` | 绿色版(单文件,免安装,双击即用) |
 | `win-unpacked/` | 解包目录(调试用) |
 
 要点:
@@ -150,22 +151,22 @@ npm run dist:portable   # 只要绿色版(单文件免安装)
   npm run dist:portable
   ```
 - **连不上后端**:先确认本机可访问接口地址(`curl <地址>`)。若 curl 返回 `401 Unauthorized` 且带 `WWW-Authenticate: Basic` 头,说明服务端开启了 HTTP Basic 认证——在面板「设置」的「后端认证」里填账号密码即可;若 curl 完全无响应/超时,再检查网络与防火墙。面板若报错,错误提示会给出具体地址和原因,把提示发出来即可。
-- **打包分发**:需要打包成 exe 时再加 electron-builder(目前未配置)。
 
 ## 技术栈
 
-### 现在版本
+### 现在版本(冻结基线)
 
 Electron 33 + electron-vite + React 18 + TypeScript + AG Grid 33(Community) + PapaParse + iconv-lite
 
-已落地: React Router 7(Declarative + HashRouter) + Zustand 5(侧边栏折叠状态) + TanStack Query 5(CSV 获取与轮询)
+已落地: React Router 7(Declarative + HashRouter) + Zustand 5(侧边栏折叠状态) + TanStack Query 5(CSV 获取与轮询) + react-icons(业务图标) + electron-builder 26(Windows 安装版/绿色版打包)
 
 ### 后续扩展
 
-* TanStack(指标列表/实时日志, 暂时不加)
-* Zod(这是什么)
-* Tailwind v4 + shadcn/ui(UI组件)
-* Vitest(这又是什么)
+- **第一阶段已批准,按实际改造步骤逐项加入**:Tailwind CSS v4、shadcn/ui、Zod 4(IPC / 配置 / CSV 解析等不可信边界的运行时校验)
+- **需先通过独立的测试与工具链迁移 spec**:Vitest 及配套的基础版本升级
+- **明确暂不引入**:TanStack Table / TanStack Virtual、React Hook Form、Apache ECharts、Playwright
+
+> 各选型的完整约束、基线规则与依赖变更流程以 [`docs/tech-stack.md`](./docs/tech-stack.md) 为准,引入新依赖前先读该文档 §7。
 
 ### 升级后的技术选型
 
@@ -177,7 +178,7 @@ Electron
 ├── UI
 │   ├── Tailwind CSS v4
 │   ├── shadcn/ui
-│   └── Lucide
+│   └── react-icons
 │
 ├── Routing
 │   └── React Router v7
@@ -198,7 +199,7 @@ Electron
 │   ├── PapaParse
 │   └── iconv-lite
 │
-└── Later, when needed
+└── Later, when needed(均需独立 spec 或真实需求)
     ├── React Hook Form
     ├── ECharts
     ├── Vitest
